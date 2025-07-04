@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Company, Contact, Opportunity, Product, Interaction
+from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument
 
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,12 +31,24 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'company_id', 'full_name', 'position', 'company_email',
             'personal_email', 'phone_office', 'phone_mobile', 'address',
-            'customer_specific_conditions', 'business_card', 'document'
+            'customer_specific_conditions', 'business_card'
         ]
         extra_kwargs = {
             'business_card': {'required': False},
             'document': {'required': False},
         }
+
+class ContactDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactDocument
+        fields = ['id', 'file', 'uploaded_at', 'name']
+        read_only_fields = ['uploaded_at', 'name']
+
+class ContactDetailSerializer(ContactSerializer):
+    documents = ContactDocumentSerializer(many=True, read_only=True)
+    
+    class Meta(ContactSerializer.Meta):
+        fields = ContactSerializer.Meta.fields + ['documents']
 
 class OpportunitySerializer(serializers.ModelSerializer):
     company_id = serializers.PrimaryKeyRelatedField(

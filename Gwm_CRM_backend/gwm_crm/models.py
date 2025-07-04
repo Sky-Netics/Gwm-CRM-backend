@@ -44,11 +44,28 @@ class Contact(models.Model):
         blank=True,             
         verbose_name="Business Card"
     )
-    document = models.FileField(
-        upload_to='contact_documents/',
-        blank=True,
-        verbose_name="Document")
+    # document = models.FileField(
+    #     upload_to='contact_documents/',
+    #     blank=True,
+    #     verbose_name="Document"
+    #     )
     
+class ContactDocument(models.Model):
+    contact = models.ForeignKey(
+        Contact, 
+        on_delete=models.CASCADE,
+        related_name='documents'
+    )
+    file = models.FileField(
+        upload_to='contact_documents/%Y/%m/%d/'
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=255, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.name and self.file:
+            self.name = self.file.name
+        super().save(*args, **kwargs)
 
 class Product(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='products')
