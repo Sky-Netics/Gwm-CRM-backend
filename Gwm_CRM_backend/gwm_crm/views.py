@@ -4,9 +4,8 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
-from .models import Company, Contact, ContactDocument
-from .serializers import CompanySerializer, ContactSerializer, ContactDocumentSerializer
-
+from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction
+from .serializers import CompanySerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
@@ -31,7 +30,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
         )
     
     def update(self, request, *args, **kwargs):
-        """Example of custom update logic"""
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -40,7 +38,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
-        """Example of custom delete logic"""
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -84,3 +81,18 @@ class ContactDocumentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         contact = Contact.objects.get(pk=self.kwargs['contact_pk'])
         serializer.save(contact=contact)
+
+class OpportunityViewSet(viewsets.ModelViewSet):
+    queryset = Opportunity.objects.all()
+    serializer_class = OpportunitySerializer
+
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+class InteractionViewSet(viewsets.ModelViewSet):
+    queryset = Interaction.objects.all()
+    serializer_class = InteractionSerializer
+
+
+

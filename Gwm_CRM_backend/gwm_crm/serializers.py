@@ -22,8 +22,7 @@ class CompanySerializer(serializers.ModelSerializer):
 class ContactSerializer(serializers.ModelSerializer):
     company_id = serializers.PrimaryKeyRelatedField(
         queryset=Company.objects.all(),
-        source='company',
-        write_only=True
+        source='company'
     )
     
     class Meta:
@@ -53,8 +52,7 @@ class ContactDetailSerializer(ContactSerializer):
 class OpportunitySerializer(serializers.ModelSerializer):
     company_id = serializers.PrimaryKeyRelatedField(
         queryset=Company.objects.all(),
-        source='company',
-        write_only=True
+        source='company'
     )
     
     class Meta:
@@ -68,7 +66,6 @@ class ProductSerializer(serializers.ModelSerializer):
     company_id = serializers.PrimaryKeyRelatedField(
         queryset=Company.objects.all(),
         source='company',
-        write_only=True
     )
     
     class Meta:
@@ -76,7 +73,7 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'company_id', 'category', 'price_list', 'price_list_expiry',
             'volume_offered', 'delivery_terms', 'packaging', 'payment_terms',
-            'currency', 'product_specifications', 'target_price'
+            'product_specifications', 'target_price'
         ]
         extra_kwargs = {
             'price_list': {'required': False},
@@ -86,7 +83,6 @@ class InteractionSerializer(serializers.ModelSerializer):
     company_id = serializers.PrimaryKeyRelatedField(
         queryset=Company.objects.all(),
         source='company',
-        write_only=True
     )
     contact_id = serializers.PrimaryKeyRelatedField(
         queryset=Contact.objects.all(),

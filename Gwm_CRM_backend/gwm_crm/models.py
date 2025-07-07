@@ -12,7 +12,8 @@ class Company(models.Model):
     notes = models.TextField()
 
     def __str__(self):
-        return self.name 
+        return f"{self.name} ({self.country})"
+    
 
 class Opportunity(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='opportunities')
@@ -28,6 +29,9 @@ class Opportunity(models.Model):
         ],
         default=0,
     )
+
+    def __str__(self):
+        return f"{self.company}: {self.stage} (${self.expected_value})" 
 
 class Contact(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='contacts')
@@ -49,6 +53,9 @@ class Contact(models.Model):
     #     blank=True,
     #     verbose_name="Document"
     #     )
+
+    def __str__(self):
+        return f"{self.full_name} - {self.position} @ {self.company}"
     
 class ContactDocument(models.Model):
     contact = models.ForeignKey(
@@ -67,6 +74,9 @@ class ContactDocument(models.Model):
             self.name = self.file.name
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"{self.name or 'Document'} for {self.contact}"
+    
 class Product(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='products')
     category = models.CharField(max_length=200)
@@ -83,6 +93,9 @@ class Product(models.Model):
     # currency = (dropdownlist)
     product_specifications = models.TextField()
     target_price = models.IntegerField()
+    
+    def __str__(self):
+        return f"{self.company}: {self.category} (Target: ${self.target_price})"
     
 class Interaction(models.Model):
     company = models.ForeignKey(
@@ -103,3 +116,7 @@ class Interaction(models.Model):
     summary = models.TextField()
     # attachments = 
     # assigned_to = 
+
+    def __str__(self):
+        contact_str = f" with {self.contact}" if self.contact else ""
+        return f"{self.company}{contact_str} - {self.type} ({self.date.date()})" 

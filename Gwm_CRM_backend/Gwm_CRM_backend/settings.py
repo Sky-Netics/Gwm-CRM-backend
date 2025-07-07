@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
     'gwm_crm',
+    'authentication'
 ]
 
 MIDDLEWARE = [
@@ -133,3 +135,18 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # AWS_ACCESS_KEY_ID = 'your-key'
 # AWS_SECRET_ACCESS_KEY = 'your-secret'
 # AWS_STORAGE_BUCKET_NAME = 'your-bucket'
+
+AUTH_USER_MODEL = 'authentication.User'
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
