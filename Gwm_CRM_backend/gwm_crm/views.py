@@ -1,15 +1,19 @@
 from django.shortcuts import render
 
+
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction
 from .serializers import CompanySerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer
+
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-    # permission_classes = [permi]
+    permission_classes = [IsAuthenticated]
+
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -45,10 +49,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
 class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
-    # permission_classes = [permissions.IsAuthenticated]
-    # filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    # filterset_fields = ['company', 'position']
-    # search_fields = ['full_name', 'company_email']
+    permission_classes = [IsAuthenticated]
+
 
     def create(self, request, *args, **kwargs):
         """
@@ -71,7 +73,7 @@ class ContactViewSet(viewsets.ModelViewSet):
     
 class ContactDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = ContactDocumentSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return ContactDocument.objects.filter(
@@ -85,14 +87,17 @@ class ContactDocumentViewSet(viewsets.ModelViewSet):
 class OpportunityViewSet(viewsets.ModelViewSet):
     queryset = Opportunity.objects.all()
     serializer_class = OpportunitySerializer
+    permission_classes = [IsAuthenticated]
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
 
 class InteractionViewSet(viewsets.ModelViewSet):
     queryset = Interaction.objects.all()
     serializer_class = InteractionSerializer
+    permission_classes = [IsAuthenticated]
 
 
 
