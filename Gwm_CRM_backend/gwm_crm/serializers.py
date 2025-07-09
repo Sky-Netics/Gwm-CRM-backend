@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument
+from authentication.models import User 
+from authentication.serializers import UserSerializer
 
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
