@@ -1,13 +1,17 @@
 from django.shortcuts import render
-
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
+from django.utils import timezone
 
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
-from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction
-from .serializers import CompanySerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer
+from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task
+from .serializers import CompanySerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer
+
+from datetime import timedelta
 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
@@ -100,4 +104,72 @@ class InteractionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
+class TaskViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+    # filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    # filterset_fields = {
+    #     'status': ['exact'],
+    #     'priority': ['exact'],
+    #     'company': ['exact'],
+    #     'opportunity': ['exact'],
+    #     'interaction': ['exact'],
+    #     'assigned_to': ['exact'],
+    #     'due_date': ['gte', 'lte', 'exact'],
+    # }
+    # search_fields = ['title', 'description']
+    # ordering_fields = ['due_date', 'priority', 'created_at']
+    # ordering = ['-due_date']
 
+    def get_queryset(self):
+        """Return tasks based on user permissions"""
+        user = self.request.user
+        
+        # For staff users: show all tasks
+        if user.is_staff:
+            return Task.objects.all()
+        
+        # For regular users: show assigned tasks or tasks from their companies
+        query = Q(assigned_to=user)
+    
+        # Add company tasks if user has a company
+        if user.company:
+            query |= Q(company=user.company) 
+        
+        return Task.objects.filter(query).distinct()
+    
+
+    @action(detail=False, methods=['get'])
+    def my_tasks(self, request):
+        """Get tasks assigned to current user"""
+        tasks = self.get_queryset().filter(assigned_to=request.user)
+        serializer = self.get_serializer(tasks, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def dashboard(self, request):
+        """Task summary for dashboard"""
+        queryset = self.filter_queryset(self.get_queryset())
+        user = request.user
+        
+        data = {
+            'total': queryset.count(),
+            'open': queryset.filter(status='open').count(),
+            'in_progress': queryset.filter(status='in_progress').count(),
+            'closed': queryset.filter(status='closed').count(),
+            'high_priority': queryset.filter(priority='high').count(),
+            'due_soon': queryset.filter(
+                due_date__gte=timezone.now(),
+                due_date__lte=timezone.now() + timedelta(days=3)
+            ).count(),
+            'overdue': queryset.filter(
+                due_date__lt=timezone.now(),
+                status__in=['open', 'in_progress']
+            ).count(),
+            'user_stats': {
+                'assigned_tasks': queryset.filter(assigned_to=user).count(),
+                'created_tasks': queryset.filter(created_by=user).count(),
+            }
+        }
+        
+        return Response(data)

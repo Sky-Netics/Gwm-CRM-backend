@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CompanyViewSet, ContactViewSet, ContactDocumentViewSet, OpportunityViewSet, ProductViewSet, InteractionViewSet
+from .views import CompanyViewSet, ContactViewSet, ContactDocumentViewSet, OpportunityViewSet, ProductViewSet, InteractionViewSet, TaskViewSet
 
 router = DefaultRouter()
 router.register(r'companies', CompanyViewSet)
@@ -8,6 +8,8 @@ router.register(r'contacts', ContactViewSet)
 router.register(r'opportunities', OpportunityViewSet)
 router.register(r'products', ProductViewSet)
 router.register(r'interactions', InteractionViewSet)
+router.register(r'tasks', TaskViewSet, basename='task')
+
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -21,5 +23,7 @@ urlpatterns = [
             'delete': 'destroy'
         }),
         name='contact-document-detail'
-    )
+    ),
+    path('tasks/my_tasks/', TaskViewSet.as_view({'get': 'my_tasks'}), name='my-tasks'),
+    path('tasks/dashboard/', TaskViewSet.as_view({'get': 'dashboard'}), name='task-dashboard'),
     ]

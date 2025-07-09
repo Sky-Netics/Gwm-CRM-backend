@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument
+from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument, Task
 from authentication.models import User 
 from authentication.serializers import UserSerializer
 
@@ -121,3 +121,26 @@ class CompanyDetailSerializer(CompanySerializer):
         fields = CompanySerializer.Meta.fields + [
             'contacts', 'opportunities', 'products', 'interactions'
         ]
+
+class TaskSerializer(serializers.ModelSerializer):
+    assigned_to = UserSerializer(read_only=True)
+    assigned_to_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), 
+        source='assigned_to',
+        write_only=True,
+        required=False
+    )
+    created_by = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Task
+        fields = [
+            'id', 'title', 'description', 'status', 'priority',
+            'due_date', 'created_at', 'updated_at',
+            'assigned_to', 'assigned_to_id',
+            'created_by',
+            'company',
+            'opportunity',
+            'interaction'
+        ]
+        read_only_fields = ['created_by']

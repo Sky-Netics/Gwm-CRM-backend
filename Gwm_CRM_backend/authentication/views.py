@@ -2,8 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
-
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, AssignCompanySerializer
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     
@@ -40,3 +39,20 @@ class UserProfileView(generics.RetrieveAPIView):
     
     def get_object(self):
         return self.request.user
+    
+class AssignCompanyView(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AssignCompanySerializer
+
+    def update(self, request, *args, **kwargs):
+        user = request.user
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        user.company = serializer.validated_data['company_id']
+        user.save()
+        
+        return Response(
+            UserSerializer(user).data,
+            status=status.HTTP_200_OK
+        )
