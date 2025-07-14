@@ -113,7 +113,7 @@ class Interaction(models.Model):
     )
     date = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=200)
-    status = models.CharField(choices=(('green', 'Green'), ('yellow', 'Yellow'), ('red', 'Red')), default='green')
+    status = models.CharField(choices=(('green', 'Green'), ('yellow', 'Yellow'), ('red', 'Red')), default='green', max_length=100)
     summary = models.TextField()
     # attachments = 
     # assigned_to = 
