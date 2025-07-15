@@ -113,8 +113,8 @@ class Interaction(models.Model):
     )
     date = models.DateTimeField(auto_now_add=True)
     type = models.CharField(max_length=200)
-    status = models.CharField(choices=(('green', 'Green'), ('yellow', 'Yellow'), ('red', 'Red')), default='green')
-    summary = models.TextField()
+    status = models.CharField(max_length=10, choices=(('green', 'Green'), ('yellow', 'Yellow'), ('red', 'Red')), default='green')
+    summary = models.TextField(blank=True)
     # attachments = 
     # assigned_to = 
 
@@ -196,3 +196,8 @@ class Task(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.get_status_display()})"
+    
+class Meeting(models.Model):
+    company = models.ForeignKey('Company', on_delete=models.CASCADE, null=True, blank=True, related_name='meetings')
+    date = models.DateTimeField(blank=True, null=True)
+    report = models.TextField(blank=True)

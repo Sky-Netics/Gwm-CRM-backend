@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 
 from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task
-from .serializers import CompanySerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer
+from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer
 
 from datetime import timedelta
 
@@ -36,6 +36,11 @@ class CompanyViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
             headers=headers
         )
+    
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return CompanyDetailSerializer
+        return CompanySerializer
     
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)

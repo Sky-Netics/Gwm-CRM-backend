@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument, Task
+from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument, Task, Meeting
 from authentication.models import User 
 from authentication.serializers import UserSerializer
 
@@ -111,17 +111,6 @@ class InteractionSerializer(serializers.ModelSerializer):
         }
 
 
-class CompanyDetailSerializer(CompanySerializer):
-    contacts = ContactSerializer(many=True, read_only=True)
-    opportunities = OpportunitySerializer(many=True, read_only=True)
-    products = ProductSerializer(many=True, read_only=True)
-    interactions = InteractionSerializer(many=True, read_only=True)
-    
-    class Meta(CompanySerializer.Meta):
-        fields = CompanySerializer.Meta.fields + [
-            'contacts', 'opportunities', 'products', 'interactions'
-        ]
-
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to = UserSerializer(read_only=True)
     assigned_to_id = serializers.PrimaryKeyRelatedField(
@@ -144,3 +133,21 @@ class TaskSerializer(serializers.ModelSerializer):
             'interaction'
         ]
         read_only_fields = ['created_by']
+
+class MeetingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Meeting
+        fields = ['id', 'date', 'report']
+
+class CompanyDetailSerializer(CompanySerializer):
+    contacts = ContactSerializer(many=True, read_only=True)
+    opportunities = OpportunitySerializer(many=True, read_only=True)
+    products = ProductSerializer(many=True, read_only=True)
+    interactions = InteractionSerializer(many=True, read_only=True)
+    tasks = TaskSerializer(many=True, read_only=True)
+    meetings = MeetingSerializer(many=True, read_only=True)
+
+    class Meta(CompanySerializer.Meta):
+        fields = CompanySerializer.Meta.fields + [
+            'contacts', 'opportunities', 'products', 'interactions', 'tasks', 'meetings'
+        ]
