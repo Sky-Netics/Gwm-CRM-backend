@@ -11,7 +11,27 @@ class Company(models.Model):
     acquired_via = models.CharField(max_length=100)
     lead_score = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)])
     notes = models.TextField()
-
+    business_card = models.FileField(
+        upload_to='business_cards/',
+        blank=True,             
+        verbose_name="Business Card"
+    )
+    catalogs = models.FileField(
+        upload_to='catalogs/',
+        blank=True,             
+        verbose_name="Catalogs"
+    )
+    signed_contracts = models.FileField(
+        upload_to='signed_contracts/',
+        blank=True,             
+        verbose_name= "Signed_Contracts"
+    )
+    correspondence = models.FileField(
+        upload_to='correspondence/',
+        blank=True,             
+        verbose_name= "Correspondence"
+    )
+    
     def __str__(self):
         return f"{self.name} ({self.country})"
     
@@ -44,11 +64,7 @@ class Contact(models.Model):
     phone_mobile = models.CharField(max_length=20)
     address = models.TextField()
     customer_specific_conditions = models.CharField(max_length=200)
-    business_card = models.FileField(
-        upload_to='business_cards/',
-        blank=True,             
-        verbose_name="Business Card"
-    )
+    
     # document = models.FileField(
     #     upload_to='contact_documents/',
     #     blank=True,
@@ -132,7 +148,7 @@ class InteractionDocument(models.Model):
     interaction = models.ForeignKey(
         Interaction, 
         on_delete=models.CASCADE,
-        related_name='attachments'
+        related_name='documents'
     )
     file = models.FileField(
         upload_to='interaction_documents/%Y/%m/%d/'
@@ -232,3 +248,16 @@ class Meeting(models.Model):
         blank=True,             
         verbose_name="Meeting Attachments"
     )
+
+class Notification(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    seen = models.BooleanField(default=False)
+    type = models.CharField(max_length=50, choices=[
+        ('task_due_soon', 'Task Due Soon'),
+        ('meeting_due_soon', 'Meeting Due Soon'),
+        ('task_assigned', 'Task Assigned')
+    ])
+    related_object_id = models.IntegerField(null=True, blank=True) 

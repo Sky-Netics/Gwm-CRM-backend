@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CompanyViewSet, ContactViewSet, ContactDocumentViewSet, OpportunityViewSet, ProductViewSet, InteractionViewSet, TaskViewSet, InteractionDocumentViewSet, CompanyCSVUploadView
+from .views import CompanyViewSet, ContactViewSet, ContactDocumentViewSet, OpportunityViewSet, ProductViewSet, InteractionViewSet, TaskViewSet, InteractionDocumentViewSet, CompanyCSVUploadView, MarkNotificationSeenView, UnreadNotificationsView
 
 router = DefaultRouter()
 router.register(r'companies', CompanyViewSet)
@@ -27,4 +27,6 @@ urlpatterns = [
     path('tasks/my_tasks/', TaskViewSet.as_view({'get': 'my_tasks'}), name='my-tasks'),
     path('tasks/dashboard/', TaskViewSet.as_view({'get': 'dashboard'}), name='task-dashboard'),
     path('api/companies/upload-csv/', CompanyCSVUploadView.as_view(), name='company-upload-csv'),
+    path('api/notifications/unread/', UnreadNotificationsView.as_view(), name='notifications-unread'),
+    path('api/notifications/mark-as-seen/', MarkNotificationSeenView.as_view(), name='notifications-mark-seen'),
     ]

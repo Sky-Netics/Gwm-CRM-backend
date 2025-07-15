@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument, Task, Meeting, InteractionDocument
+from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument, Task, Meeting, InteractionDocument, Notification
 from authentication.models import User 
 from authentication.serializers import UserSerializer
 
@@ -8,11 +8,16 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = [
             'id', 'name', 'website', 'country', 'industry_category',
-            'activity_level', 'acquired_via', 'lead_score', 'notes'
+            'activity_level', 'acquired_via', 'lead_score', 'notes', 'business_card',
+            'catalogs', 'signed_contracts', 'correspondence'
         ]
         extra_kwargs = {
             'name': {'required': True},
             'website': {'required': False},
+            'business_card': {'required': False},
+            'catalogs': {'required': False},
+            'signed_contracts': {'required': False},
+            'correspondence': {'required': False},
         }
 
     def validate_name(self, value):
@@ -117,7 +122,7 @@ class InteractionDocumentSerializer(serializers.ModelSerializer):
         read_only_fields = ['uploaded_at', 'name']
 
 class TaskSerializer(serializers.ModelSerializer):
-    assigned_to = UserSerializer(read_only=True)
+    # assigned_to = UserSerializer(read_only=True)
     assigned_to_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), 
         source='assigned_to',
@@ -131,7 +136,7 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'status', 'priority',
             'due_date', 'created_at', 'updated_at',
-            'assigned_to', 'assigned_to_id',
+            'assigned_to_id',
             'created_by',
             'company',
             'opportunity',
@@ -157,3 +162,15 @@ class CompanyDetailSerializer(CompanySerializer):
             'contacts', 'opportunities', 'products', 'interactions', 'tasks', 'meetings'
         ]
 
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = [
+            'id',
+            'title',
+            'message',
+            'type',
+            'seen',
+            'created_at',
+            'related_object_id',
+        ]

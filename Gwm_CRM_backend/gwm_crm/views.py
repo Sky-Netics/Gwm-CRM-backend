@@ -10,8 +10,8 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 
-from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task, InteractionDocument
-from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, InteractionDocumentSerializer
+from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task, InteractionDocument, Notification
+from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, InteractionDocumentSerializer, NotificationSerializer
 
 from datetime import timedelta
 import csv
@@ -21,7 +21,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated]
-
+    parser_classes = [MultiPartParser]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -178,19 +178,9 @@ class InteractionViewSet(viewsets.ModelViewSet):
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
-    # filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    # filterset_fields = {
-    #     'status': ['exact'],
-    #     'priority': ['exact'],
-    #     'company': ['exact'],
-    #     'opportunity': ['exact'],
-    #     'interaction': ['exact'],
-    #     'assigned_to': ['exact'],
-    #     'due_date': ['gte', 'lte', 'exact'],
-    # }
-    # search_fields = ['title', 'description']
-    # ordering_fields = ['due_date', 'priority', 'created_at']
-    # ordering = ['-due_date']
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
     def get_queryset(self):
         """Return tasks based on user permissions"""
@@ -257,3 +247,16 @@ class InteractionDocumentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
         serializer.save(interaction=interaction)
+
+class UnreadNotificationsView(APIView):
+    def get(self, request):
+        user = request.user
+        notifications = Notification.objects.filter(user=user, seen=False).order_by('-created_at')
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
+    
+class MarkNotificationSeenView(APIView):
+    def post(self, request):
+        ids = request.data.get('ids', [])
+        Notification.objects.filter(id__in=ids, user=request.user).update(seen=True)
+        return Response({'status': 'ok'})
