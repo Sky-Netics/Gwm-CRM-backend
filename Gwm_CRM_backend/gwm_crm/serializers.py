@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument, Task, Meeting
+from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument, Task, Meeting, InteractionDocument
 from authentication.models import User 
 from authentication.serializers import UserSerializer
 
@@ -92,24 +92,29 @@ class InteractionSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
-    # assigned_to_id = serializers.PrimaryKeyRelatedField(
-    #     queryset=User.objects.all(),
-    #     source='assigned_to',
-    #     required=False,
-    #     allow_null=True
-    # )
+    assigned_to_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='assigned_to',
+        required=False,
+        allow_null=True
+    )
     
     class Meta:
         model = Interaction
         fields = [
             'id', 'company_id', 'contact_id', 'date', 'type', 'status',
-            'summary'
+            'summary', 'assigned_to_id', 'documents'
         ]
         extra_kwargs = {
             'date': {'read_only': True},
             # 'attachments': {'required': False},
         }
 
+class InteractionDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InteractionDocument
+        fields = ['id', 'file', 'uploaded_at', 'name']
+        read_only_fields = ['uploaded_at', 'name']
 
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to = UserSerializer(read_only=True)
@@ -151,3 +156,4 @@ class CompanyDetailSerializer(CompanySerializer):
         fields = CompanySerializer.Meta.fields + [
             'contacts', 'opportunities', 'products', 'interactions', 'tasks', 'meetings'
         ]
+

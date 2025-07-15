@@ -7,11 +7,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser
 
-from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task
-from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer
+from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task, InteractionDocument
+from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, InteractionDocumentSerializer
 
 from datetime import timedelta
+import csv
+import io
 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
@@ -54,7 +58,56 @@ class CompanyViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
+class CompanyCSVUploadView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def get(self, request, *args, **kwargs):
+        return Response({"message": "Upload endpoint is live!"})
+
+    def post(self, request, *args, **kwargs):
+        csv_file = request.FILES.get('file')
+        if not csv_file:
+            return Response({'error': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not csv_file.name.endswith('.csv'):
+            return Response({'error': 'File is not a CSV.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            decoded_file = csv_file.read().decode('utf-8')
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+
+            created_count = 0
+            errors = []
+
+            for idx, row in enumerate(reader, start=1):
+                try:
+                    company, created = Company.objects.get_or_create(
+                        name=row['name'],
+                        defaults={
+                            'website': row.get('website', ''),
+                            'country': row['country'],
+                            'industry_category': int(row['industry_category']),
+                            'activity_level': row['activity_level'],
+                            'acquired_via': row['acquired_via'],
+                            'lead_score': int(row['lead_score']),
+                            'notes': row.get('notes', ''),
+                        }
+                    )
+                    if created:
+                        created_count += 1
+                except Exception as e:
+                    errors.append({'row': idx, 'error': str(e)})
+
+            return Response({
+                'created': created_count,
+                'errors': errors
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'error': f'Failed to process CSV: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
@@ -97,6 +150,19 @@ class OpportunityViewSet(viewsets.ModelViewSet):
     queryset = Opportunity.objects.all()
     serializer_class = OpportunitySerializer
     permission_classes = [IsAuthenticated]
+
+class InteractionDocumentViewSet(viewsets.ModelViewSet):
+    serializer_class = InteractionDocumentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return InteractionDocument.objects.filter(
+            interaction_id=self.kwargs['interaction_pk']
+        )
+
+    def perform_create(self, serializer):
+        interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
+        serializer.save(interaction=interaction)
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
@@ -178,3 +244,16 @@ class TaskViewSet(viewsets.ModelViewSet):
         }
         
         return Response(data)
+    
+class InteractionDocumentViewSet(viewsets.ModelViewSet):
+    serializer_class = InteractionDocumentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return InteractionDocument.objects.filter(
+            interaction_id=self.kwargs['interaction_pk']
+        )
+
+    def perform_create(self, serializer):
+        interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
+        serializer.save(interaction=interaction)

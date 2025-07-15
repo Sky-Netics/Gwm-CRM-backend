@@ -1,0 +1,3 @@
+name,website,country,industry_category,activity_level,acquired_via,lead_score,notes
+"Acme Inc","https://acme.com","a",1,"active","cold email",80,"Great potential"
+"Beta LLC","https://beta.io","b",2,"passive","event",40,"Needs follow-up"

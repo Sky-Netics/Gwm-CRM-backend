@@ -115,13 +115,39 @@ class Interaction(models.Model):
     type = models.CharField(max_length=200)
     status = models.CharField(max_length=10, choices=(('green', 'Green'), ('yellow', 'Yellow'), ('red', 'Red')), default='green')
     summary = models.TextField(blank=True)
-    # attachments = 
-    # assigned_to = 
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_interactions',
+        verbose_name="Assigned User"
+    )
 
     def __str__(self):
         contact_str = f" with {self.contact}" if self.contact else ""
         return f"{self.company}{contact_str} - {self.type} ({self.date.date()})" 
 
+class InteractionDocument(models.Model):
+    interaction = models.ForeignKey(
+        Interaction, 
+        on_delete=models.CASCADE,
+        related_name='attachments'
+    )
+    file = models.FileField(
+        upload_to='interaction_documents/%Y/%m/%d/'
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=255, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.name and self.file:
+            self.name = self.file.name
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name or 'Document'} for {self.interaction}"
+    
 class Task(models.Model):
     STATUS_CHOICES = [
         ('open', 'Open'),
@@ -201,3 +227,8 @@ class Meeting(models.Model):
     company = models.ForeignKey('Company', on_delete=models.CASCADE, null=True, blank=True, related_name='meetings')
     date = models.DateTimeField(blank=True, null=True)
     report = models.TextField(blank=True)
+    attachment = models.FileField(
+        upload_to='meetings_attachments/',
+        blank=True,             
+        verbose_name="Meeting Attachments"
+    )
