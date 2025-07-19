@@ -3,6 +3,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.utils import timezone
 
+from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
@@ -113,6 +114,7 @@ class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
 
 
     def create(self, request, *args, **kwargs):
@@ -137,6 +139,7 @@ class ContactViewSet(viewsets.ModelViewSet):
 class ContactDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = ContactDocumentSerializer
     permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
 
     def get_queryset(self):
         return ContactDocument.objects.filter(
@@ -151,10 +154,12 @@ class OpportunityViewSet(viewsets.ModelViewSet):
     queryset = Opportunity.objects.all()
     serializer_class = OpportunitySerializer
     permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
 
 class InteractionDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = InteractionDocumentSerializer
     permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
 
     def get_queryset(self):
         return InteractionDocument.objects.filter(
@@ -169,17 +174,19 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
 
 class InteractionViewSet(viewsets.ModelViewSet):
     queryset = Interaction.objects.all()
     serializer_class = InteractionSerializer
     permission_classes = [IsAuthenticated]
-
+    renderer_classes = [JSONRenderer]
 
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
-
+    renderer_classes = [JSONRenderer]
+    
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
@@ -239,6 +246,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 class InteractionDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = InteractionDocumentSerializer
     permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
 
     def get_queryset(self):
         return InteractionDocument.objects.filter(
