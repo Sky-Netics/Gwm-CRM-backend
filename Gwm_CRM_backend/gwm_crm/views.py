@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from rest_framework.renderers import JSONRenderer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -186,35 +186,43 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
-    
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsAuthenticated, IsAdminUser]
+        return super().get_permissions()
 
     def get_queryset(self):
-        """Return tasks based on user permissions"""
+        """
+        Returns different querysets based on the action:
+        - Admin users see all tasks in main endpoint
+        - Regular users only see their tasks in my-tasks endpoint
+        """
         user = self.request.user
-        
-        # For staff users: show all tasks
+
+        if self.action == 'my_tasks':
+            return Task.objects.filter(assigned_to=user)
+
         if user.is_staff:
             return Task.objects.all()
-        
-        # For regular users: show assigned tasks or tasks from their companies
-        query = Q(assigned_to=user)
-    
-        # Add company tasks if user has a company
-        if user.company:
-            query |= Q(company=user.company) 
-        
-        return Task.objects.filter(query).distinct()
-    
 
-    @action(detail=False, methods=['get'])
+        return Task.objects.none()
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_tasks(self, request):
-        """Get tasks assigned to current user"""
-        tasks = self.get_queryset().filter(assigned_to=request.user)
-        serializer = self.get_serializer(tasks, many=True)
-        return Response(serializer.data)
+        """
+        Special endpoint for users to see only their assigned tasks
+        URL: /tasks/my-tasks/
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Task summary for dashboard"""
