@@ -211,3 +211,4 @@ Gwm_CRM_backend/gwm_crm/migrations/0001_initial.py
 Gwm_CRM_backend/authentication/migrations/0002_user_company.py
 Gwm_CRM_backend/authentication/migrations/0002_initial.py
 Gwm_CRM_backend/authentication/migrations/0001_initial.py
+/Gwm_CRM_backend/gwm_crm/migrations
