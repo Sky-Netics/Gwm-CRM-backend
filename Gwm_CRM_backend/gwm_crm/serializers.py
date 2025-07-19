@@ -144,9 +144,23 @@ class TaskSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_by']
 
 class MeetingSerializer(serializers.ModelSerializer):
+    user_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.all(),
+        source='users',
+        write_only=True,
+        required=False
+    )
+    
+    attendees = UserSerializer(
+        source='users',
+        many=True,
+        read_only=True
+    )
+
     class Meta:
         model = Meeting
-        fields = ['id', 'date', 'report']
+        fields = ['id', 'company', 'date', 'report', 'attachment', 'user_ids', 'attendees']
 
 class CompanyDetailSerializer(CompanySerializer):
     contacts = ContactSerializer(many=True, read_only=True)

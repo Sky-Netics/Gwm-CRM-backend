@@ -252,6 +252,11 @@ class Meeting(models.Model):
     company = models.ForeignKey('Company', on_delete=models.CASCADE, null=True, blank=True, related_name='meetings')
     date = models.DateTimeField(blank=True, null=True)
     report = models.TextField(blank=True)
+    users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='meetings',
+        verbose_name="Attendees"
+    )
     attachment = models.FileField(
         upload_to='meetings_attachments/',
         blank=True,             

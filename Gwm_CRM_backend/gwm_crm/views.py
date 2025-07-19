@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.utils import timezone
+from django.http import HttpResponse
 
 from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -12,11 +13,13 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework import generics
 
-from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task, InteractionDocument, Notification
-from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, InteractionDocumentSerializer, NotificationSerializer
+from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task, InteractionDocument, Notification, Meeting
+from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, InteractionDocumentSerializer, NotificationSerializer, MeetingSerializer
+from .exporters import ModelExporter
 
 from datetime import timedelta
 import csv
+import json
 import io
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -60,7 +63,36 @@ class CompanyViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=False, methods=['get'], url_path='export')
+    def export_all(self, request):
+        queryset = self.get_queryset()
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="companies.csv"'
 
+        writer = csv.writer(response)
+        fields = ['id', 'name', 'website', 'country', 'industry_category',
+                'activity_level', 'acquired_via', 'lead_score', 'notes']
+        writer.writerow(fields)
+
+        for company in queryset:
+            writer.writerow([getattr(company, field) for field in fields])
+
+        return response
+
+    
+    @action(detail=True, methods=['get'], url_path='export')
+    def export_single(self, request, pk=None):
+        company = self.get_object()
+        serializer = CompanyDetailSerializer(company)
+        data = json.dumps(serializer.data, indent=4)
+
+        response = HttpResponse(data, content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename="company_{company.id}.json"'
+        return response
+
+    
 class CompanyCSVUploadView(APIView):
     parser_classes = [MultiPartParser]
 
@@ -264,6 +296,15 @@ class InteractionDocumentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
         serializer.save(interaction=interaction)
+
+class MeetingViewSet(viewsets.ModelViewSet):
+    queryset = Meeting.objects.all()
+    serializer_class = MeetingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Users can only see meetings they're attending"""
+        return self.request.user.meetings.all()
 
 class UnreadNotificationsView(generics.ListAPIView):
     serializer_class = NotificationSerializer
