@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Company, Opportunity, Product, Contact, Interaction, Task, Meeting
+from .models import Company, Opportunity, Product, Contact, Interaction, Task, Meeting, Notification
 
 admin.site.register(Company)
 admin.site.register(Contact)
@@ -8,3 +8,4 @@ admin.site.register(Product)
 admin.site.register(Interaction)
 admin.site.register(Task)
 admin.site.register(Meeting)
+admin.site.register(Notification)

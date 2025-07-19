@@ -2,7 +2,10 @@ from django.shortcuts import render
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, AssignCompanySerializer
+from .models import User
+
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     
@@ -56,3 +59,8 @@ class AssignCompanyView(generics.UpdateAPIView):
             UserSerializer(user).data,
             status=status.HTTP_200_OK
         )
+
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser] 

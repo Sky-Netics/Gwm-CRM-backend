@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+import pycountry
 
 class Company(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -13,22 +14,26 @@ class Company(models.Model):
     notes = models.TextField()
     business_card = models.FileField(
         upload_to='business_cards/',
-        blank=True,             
+        blank=True,
+        null=True,             
         verbose_name="Business Card"
     )
     catalogs = models.FileField(
         upload_to='catalogs/',
-        blank=True,             
+        blank=True,      
+        null=True,       
         verbose_name="Catalogs"
     )
     signed_contracts = models.FileField(
         upload_to='signed_contracts/',
-        blank=True,             
+        blank=True,  
+        null=True,           
         verbose_name= "Signed_Contracts"
     )
     correspondence = models.FileField(
         upload_to='correspondence/',
-        blank=True,             
+        blank=True,    
+        null=True,         
         verbose_name= "Correspondence"
     )
     
@@ -64,12 +69,6 @@ class Contact(models.Model):
     phone_mobile = models.CharField(max_length=20)
     address = models.TextField()
     customer_specific_conditions = models.CharField(max_length=200)
-    
-    # document = models.FileField(
-    #     upload_to='contact_documents/',
-    #     blank=True,
-    #     verbose_name="Document"
-    #     )
 
     def __str__(self):
         return f"{self.full_name} - {self.position} @ {self.company}"
@@ -94,6 +93,12 @@ class ContactDocument(models.Model):
     def __str__(self):
         return f"{self.name or 'Document'} for {self.contact}"
     
+CURRENCY_CHOICES = sorted(
+    [(currency.alpha_3, f"{currency.alpha_3} - {currency.name}") 
+     for currency in pycountry.currencies],
+    key=lambda x: x[1]
+)
+
 class Product(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='products')
     category = models.CharField(max_length=200)
@@ -107,7 +112,11 @@ class Product(models.Model):
     delivery_terms = models.CharField(max_length=200)
     packaging = models.CharField(max_length=200)
     payment_terms = models.CharField(max_length=200)
-    # currency = (dropdownlist)
+    currency = models.CharField(
+        max_length=3,
+        choices=CURRENCY_CHOICES,
+        default='IRR'
+    )
     product_specifications = models.TextField()
     target_price = models.IntegerField()
     

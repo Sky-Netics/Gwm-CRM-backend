@@ -37,10 +37,9 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'company_id', 'full_name', 'position', 'company_email',
             'personal_email', 'phone_office', 'phone_mobile', 'address',
-            'customer_specific_conditions', 'business_card'
+            'customer_specific_conditions'
         ]
         extra_kwargs = {
-            'business_card': {'required': False},
             'document': {'required': False},
         }
 

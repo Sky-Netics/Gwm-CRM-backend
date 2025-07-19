@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
+from rest_framework import generics
 
 from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task, InteractionDocument, Notification
 from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, InteractionDocumentSerializer, NotificationSerializer
@@ -248,15 +249,34 @@ class InteractionDocumentViewSet(viewsets.ModelViewSet):
         interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
         serializer.save(interaction=interaction)
 
-class UnreadNotificationsView(APIView):
-    def get(self, request):
-        user = request.user
-        notifications = Notification.objects.filter(user=user, seen=False).order_by('-created_at')
-        serializer = NotificationSerializer(notifications, many=True)
-        return Response(serializer.data)
+class UnreadNotificationsView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(
+            user=self.request.user,
+            seen=False
+        ).order_by('-created_at')
+
     
-class MarkNotificationSeenView(APIView):
+class MarkNotificationsReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        ids = request.data.get('ids', [])
-        Notification.objects.filter(id__in=ids, user=request.user).update(seen=True)
-        return Response({'status': 'ok'})
+        updated = Notification.objects.filter(
+            user=request.user,
+            seen=False
+        ).update(seen=True)
+        
+        return Response({
+            'status': 'success',
+            'marked_read': updated
+        })
+    
+class AllNotificationsView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
