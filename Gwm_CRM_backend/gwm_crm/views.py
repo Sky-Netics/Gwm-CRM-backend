@@ -12,6 +12,9 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework import generics
+from rest_framework.parsers import JSONParser
+
+
 
 from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task, InteractionDocument, Notification, Meeting
 from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, InteractionDocumentSerializer, NotificationSerializer, MeetingSerializer
@@ -23,10 +26,11 @@ import json
 import io
 
 class CompanyViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser]
+    # parser_classes = [MultiPartParser]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -94,7 +98,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     
 class CompanyCSVUploadView(APIView):
-    parser_classes = [MultiPartParser]
+    parser_classes = [JSONParser]
+    # parser_classes = [MultiPartParser]
 
     def get(self, request, *args, **kwargs):
         return Response({"message": "Upload endpoint is live!"})
@@ -143,6 +148,7 @@ class CompanyCSVUploadView(APIView):
             return Response({'error': f'Failed to process CSV: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class ContactViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     permission_classes = [IsAuthenticated]
@@ -169,6 +175,7 @@ class ContactViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
 class ContactDocumentViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     serializer_class = ContactDocumentSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
@@ -183,12 +190,14 @@ class ContactDocumentViewSet(viewsets.ModelViewSet):
         serializer.save(contact=contact)
 
 class OpportunityViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     queryset = Opportunity.objects.all()
     serializer_class = OpportunitySerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
 
 class InteractionDocumentViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     serializer_class = InteractionDocumentSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
@@ -203,18 +212,21 @@ class InteractionDocumentViewSet(viewsets.ModelViewSet):
         serializer.save(interaction=interaction)
 
 class ProductViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
 
 class InteractionViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     queryset = Interaction.objects.all()
     serializer_class = InteractionSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
 
 class TaskViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
@@ -242,6 +254,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_tasks(self, request):
+        parser_classes = [JSONParser]
         """
         Special endpoint for users to see only their assigned tasks
         URL: /tasks/my-tasks/
@@ -257,6 +270,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
+        parser_classes = [JSONParser]
         """Task summary for dashboard"""
         queryset = self.filter_queryset(self.get_queryset())
         user = request.user
@@ -284,6 +298,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Response(data)
     
 class InteractionDocumentViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
     serializer_class = InteractionDocumentSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
@@ -307,6 +322,7 @@ class MeetingViewSet(viewsets.ModelViewSet):
         return self.request.user.meetings.all()
 
 class UnreadNotificationsView(generics.ListAPIView):
+    parser_classes = [JSONParser]
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
 
@@ -318,6 +334,7 @@ class UnreadNotificationsView(generics.ListAPIView):
 
     
 class MarkNotificationsReadView(APIView):
+    parser_classes = [JSONParser]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -332,6 +349,7 @@ class MarkNotificationsReadView(APIView):
         })
     
 class AllNotificationsView(generics.ListAPIView):
+    parser_classes = [JSONParser]
     serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
 
