@@ -168,3 +168,15 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True 
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'JWT Token (Format: Bearer <token>)'
+        }
+    },
+    'USE_SESSION_AUTH': False,  # Disable session auth if not needed
+}

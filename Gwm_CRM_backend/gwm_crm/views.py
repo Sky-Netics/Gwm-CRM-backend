@@ -14,22 +14,54 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework import generics
 from rest_framework.parsers import JSONParser
 
-
-
 from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task, InteractionDocument, Notification, Meeting
 from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, InteractionDocumentSerializer, NotificationSerializer, MeetingSerializer
-from .exporters import ModelExporter
 
 from datetime import timedelta
 import csv
 import json
 import io
 
+class ExportMixin:
+    export_fields = None  # Override this in each viewset
+    export_serializer_class = None  # Optional: for JSON export
+
+    @action(detail=False, methods=['get'], url_path='export')
+    def export_all(self, request):
+        queryset = self.get_queryset()
+        model_name = self.queryset.model.__name__.lower()
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{model_name}s.csv"'
+
+        writer = csv.writer(response)
+        fields = self.export_fields or [field.name for field in self.queryset.model._meta.fields]
+        writer.writerow(fields)
+
+        for obj in queryset:
+            writer.writerow([getattr(obj, field, '') for field in fields])
+
+        return response
+
+    @action(detail=True, methods=['get'], url_path='export')
+    def export_single(self, request, pk=None):
+        obj = self.get_object()
+        serializer_class = self.export_serializer_class or self.get_serializer_class()
+        serializer = serializer_class(obj)
+        data = json.dumps(serializer.data, indent=4)
+
+        model_name = obj.__class__.__name__.lower()
+        response = HttpResponse(data, content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename="{model_name}_{obj.pk}.json"'
+        return response
+
 class CompanyViewSet(viewsets.ModelViewSet):
     parser_classes = [JSONParser]
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
     permission_classes = [IsAuthenticated]
+    # export_fields = ['id', 'name', 'website', 'country', 'industry_category',
+    #                  'activity_level', 'acquired_via', 'lead_score', 'notes']
     # parser_classes = [MultiPartParser]
 
     def create(self, request, *args, **kwargs):
@@ -84,7 +116,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
             writer.writerow([getattr(company, field) for field in fields])
 
         return response
-
     
     @action(detail=True, methods=['get'], url_path='export')
     def export_single(self, request, pk=None):
@@ -96,7 +127,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = f'attachment; filename="company_{company.id}.json"'
         return response
 
-    
+
 class CompanyCSVUploadView(APIView):
     parser_classes = [JSONParser]
     # parser_classes = [MultiPartParser]
@@ -147,12 +178,13 @@ class CompanyCSVUploadView(APIView):
         except Exception as e:
             return Response({'error': f'Failed to process CSV: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-class ContactViewSet(viewsets.ModelViewSet):
+class ContactViewSet(viewsets.ModelViewSet, ExportMixin):
     parser_classes = [JSONParser]
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
+    export_fields = ['id', 'full_name', 'position', 'company_email', 'phone_office']
 
 
     def create(self, request, *args, **kwargs):
@@ -189,19 +221,47 @@ class ContactDocumentViewSet(viewsets.ModelViewSet):
         contact = Contact.objects.get(pk=self.kwargs['contact_pk'])
         serializer.save(contact=contact)
 
-class OpportunityViewSet(viewsets.ModelViewSet):
+class OpportunityViewSet(viewsets.ModelViewSet, ExportMixin):
     parser_classes = [JSONParser]
     queryset = Opportunity.objects.all()
     serializer_class = OpportunitySerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
-
+    export_fields = ['id', 'company_id', 'stage', 'expected_value', 'probability']
+     
 class InteractionDocumentViewSet(viewsets.ModelViewSet):
     parser_classes = [JSONParser]
     serializer_class = InteractionDocumentSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
 
+    # @action(detail=False, methods=['get'], url_path='export')
+    # def export_all(self, request):
+    #     queryset = self.get_queryset()
+        
+    #     response = HttpResponse(content_type='text/csv')
+    #     response['Content-Disposition'] = 'attachment; filename="interactions.csv"'
+
+    #     writer = csv.writer(response)
+    #     fields = ['id', 'company_id', 'contact_id', 'date', 'type', 'status']
+    #     writer.writerow(fields)
+
+    #     for interaction in queryset:
+    #         writer.writerow([getattr(interaction, field) for field in fields])
+
+    #     return response
+
+    
+    # @action(detail=True, methods=['get'], url_path='export')
+    # def export_single(self, request, pk=None):
+    #     interaction = self.get_object()
+    #     serializer = InteractionSerializer(interaction)
+    #     data = json.dumps(serializer.data, indent=4)
+
+    #     response = HttpResponse(data, content_type='application/json')
+    #     response['Content-Disposition'] = f'attachment; filename="interaction_{interaction.id}.json"'
+    #     return response
+    
     def get_queryset(self):
         return InteractionDocument.objects.filter(
             interaction_id=self.kwargs['interaction_pk']
@@ -211,25 +271,56 @@ class InteractionDocumentViewSet(viewsets.ModelViewSet):
         interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
         serializer.save(interaction=interaction)
 
-class ProductViewSet(viewsets.ModelViewSet):
+
+class ProductViewSet(viewsets.ModelViewSet, ExportMixin):
     parser_classes = [JSONParser]
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
+    export_fields = ['id', 'company_id', 'category', 'volume_offered', 'currency', 'target_price']
 
-class InteractionViewSet(viewsets.ModelViewSet):
+class InteractionViewSet(viewsets.ModelViewSet, ExportMixin):
     parser_classes = [JSONParser]
     queryset = Interaction.objects.all()
     serializer_class = InteractionSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
+    export_fields = ['id', 'company_id', 'contact_id', 'date', 'type', 'status']
+
 
 class TaskViewSet(viewsets.ModelViewSet):
     parser_classes = [JSONParser]
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
+    # export_fields = ['id', 'title', 'status', 'priority', 'due_date', 'assigned_to_id', 'created_by_id']
+    @action(detail=False, methods=['get'], url_path='export')
+    def export_all(self, request):
+        queryset = self.get_queryset()
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="tasks.csv"'
+
+        writer = csv.writer(response)
+        fields = ['id', 'title', 'status', 'priority', 'due_date', 'assigned_to_id', 'created_by_id']
+        writer.writerow(fields)
+
+        for task in queryset:
+            writer.writerow([getattr(task, field) for field in fields])
+
+        return response
+
+    
+    @action(detail=True, methods=['get'], url_path='export')
+    def export_single(self, request, pk=None):
+        task = self.get_object()
+        serializer = TaskSerializer(task)
+        data = json.dumps(serializer.data, indent=4)
+
+        response = HttpResponse(data, content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename="task_{task.id}.json"'
+        return response
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'destroy']:
@@ -312,10 +403,11 @@ class InteractionDocumentViewSet(viewsets.ModelViewSet):
         interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
         serializer.save(interaction=interaction)
 
-class MeetingViewSet(viewsets.ModelViewSet):
+class MeetingViewSet(viewsets.ModelViewSet, ExportMixin):
     queryset = Meeting.objects.all()
     serializer_class = MeetingSerializer
     permission_classes = [IsAuthenticated]
+    export_fields = ['id', 'company_id', 'user_ids', 'date']
 
     def get_queryset(self):
         """Users can only see meetings they're attending"""
@@ -355,3 +447,66 @@ class AllNotificationsView(generics.ListAPIView):
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+
+class CompanyFileViewSet(viewsets.ViewSet):
+    parser_classes = [MultiPartParser]
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='business-card')
+    def business_card(self, request, pk=None):
+        return self.handle_file_field(request, pk, 'business_card')
+
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='catalogs')
+    def catalogs(self, request, pk=None):
+        return self.handle_file_field(request, pk, 'catalogs')
+
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='signed-contracts')
+    def signed_contracts(self, request, pk=None):
+        return self.handle_file_field(request, pk, 'signed_contracts')
+
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='correspondence')
+    def correspondence(self, request, pk=None):
+        return self.handle_file_field(request, pk, 'correspondence')
+
+    def handle_file_field(self, request, pk, field_name):
+        try:
+            company = Company.objects.get(pk=pk)
+        except Company.DoesNotExist:
+            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'GET':
+            if not getattr(company, field_name):
+                return Response({'error': f'No {field_name.replace("_", " ")} found'}, 
+                               status=status.HTTP_404_NOT_FOUND)
+            
+            file_url = request.build_absolute_uri(getattr(company, field_name).url)
+            return Response({'url': file_url})
+
+        elif request.method == 'POST':
+            file = request.FILES.get('file')
+            if not file:
+                return Response({'error': 'No file provided'}, 
+                              status=status.HTTP_400_BAD_REQUEST)
+            
+            # Delete old file if exists
+            old_file = getattr(company, field_name)
+            if old_file:
+                old_file.delete(save=False)
+            
+            setattr(company, field_name, file)
+            company.save()
+            
+            file_url = request.build_absolute_uri(getattr(company, field_name).url)
+            return Response({'url': file_url}, status=status.HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            file = getattr(company, field_name)
+            if not file:
+                return Response({'error': f'No {field_name.replace("_", " ")} found'}, 
+                               status=status.HTTP_404_NOT_FOUND)
+            
+            file.delete(save=False)
+            setattr(company, field_name, None)
+            company.save()
+            
+            return Response(status=status.HTTP_204_NO_CONTENT)
