@@ -69,29 +69,34 @@ class Contact(models.Model):
     phone_mobile = models.CharField(max_length=20)
     address = models.TextField()
     customer_specific_conditions = models.CharField(max_length=200)
-
+    document = models.FileField(
+        upload_to='contact_documents/',
+        blank=True,
+        null=True,             
+        verbose_name="Contact Document"
+    )
     def __str__(self):
         return f"{self.full_name} - {self.position} @ {self.company}"
     
-class ContactDocument(models.Model):
-    contact = models.ForeignKey(
-        Contact, 
-        on_delete=models.CASCADE,
-        related_name='documents'
-    )
-    file = models.FileField(
-        upload_to='contact_documents/%Y/%m/%d/'
-    )
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=255, blank=True)
+# class ContactDocument(models.Model):
+#     contact = models.ForeignKey(
+#         Contact, 
+#         on_delete=models.CASCADE,
+#         related_name='documents'
+#     )
+#     file = models.FileField(
+#         upload_to='contact_documents/%Y/%m/%d/'
+#     )
+#     uploaded_at = models.DateTimeField(auto_now_add=True)
+#     name = models.CharField(max_length=255, blank=True)
 
-    def save(self, *args, **kwargs):
-        if not self.name and self.file:
-            self.name = self.file.name
-        super().save(*args, **kwargs)
+#     def save(self, *args, **kwargs):
+#         if not self.name and self.file:
+#             self.name = self.file.name
+#         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f"{self.name or 'Document'} for {self.contact}"
+#     def __str__(self):
+#         return f"{self.name or 'Document'} for {self.contact}"
     
 CURRENCY_CHOICES = sorted(
     [(currency.alpha_3, f"{currency.alpha_3} - {currency.name}") 
@@ -148,30 +153,36 @@ class Interaction(models.Model):
         related_name='assigned_interactions',
         verbose_name="Assigned User"
     )
+    document = models.FileField(
+        upload_to='interaction_documents/',
+        blank=True,
+        null=True,             
+        verbose_name="Interaction Document"
+    )
 
     def __str__(self):
         contact_str = f" with {self.contact}" if self.contact else ""
         return f"{self.company}{contact_str} - {self.type} ({self.date.date()})" 
 
-class InteractionDocument(models.Model):
-    interaction = models.ForeignKey(
-        Interaction, 
-        on_delete=models.CASCADE,
-        related_name='documents'
-    )
-    file = models.FileField(
-        upload_to='interaction_documents/%Y/%m/%d/'
-    )
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    name = models.CharField(max_length=255, blank=True)
+# class InteractionDocument(models.Model):
+#     interaction = models.ForeignKey(
+#         Interaction, 
+#         on_delete=models.CASCADE,
+#         related_name='documents'
+#     )
+#     file = models.FileField(
+#         upload_to='interaction_documents/%Y/%m/%d/'
+#     )
+#     uploaded_at = models.DateTimeField(auto_now_add=True)
+#     name = models.CharField(max_length=255, blank=True)
 
-    def save(self, *args, **kwargs):
-        if not self.name and self.file:
-            self.name = self.file.name
-        super().save(*args, **kwargs)
+#     def save(self, *args, **kwargs):
+#         if not self.name and self.file:
+#             self.name = self.file.name
+#         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f"{self.name or 'Document'} for {self.interaction}"
+#     def __str__(self):
+#         return f"{self.name or 'Document'} for {self.interaction}"
     
 class Task(models.Model):
     STATUS_CHOICES = [

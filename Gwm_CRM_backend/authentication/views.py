@@ -1,12 +1,17 @@
 from django.shortcuts import render
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework import viewsets, status, filters
+from rest_framework.views import APIView
 
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, AssignCompanySerializer, UserDetailSerializer
 from .models import User
+
+from gwm_crm.models import Task, Meeting
+from gwm_crm.serializers import TaskSerializer, MeetingSerializer
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -84,3 +89,37 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return [IsAdminUser()]
         return super().get_permissions()
+    
+class UserDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+
+        # Optional: ensure users can only access their own dashboard
+        if request.user != user and not request.user.is_staff:
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Serialize user data
+        user_data = UserSerializer(user, context={'request': request}).data
+
+        # Serialize tasks
+        tasks = Task.objects.filter(assigned_to=user)
+        tasks_data = TaskSerializer(tasks, many=True, context={'request': request}).data
+
+        # Serialize meetings
+        meetings = Meeting.objects.filter(users=user)
+        meetings_data = MeetingSerializer(meetings, many=True, context={'request': request}).data
+
+        # # Optional: notifications
+        # notifications = Notification.objects.filter(user=user).order_by('-created_at')[:10]
+        # notifications_data = NotificationSerializer(notifications, many=True).data
+
+        dashboard_data = {
+            'user': user_data,
+            'tasks': tasks_data,
+            'meetings': meetings_data,
+            # 'notifications': notifications_data
+        }
+
+        return Response(dashboard_data)

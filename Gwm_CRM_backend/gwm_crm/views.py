@@ -14,8 +14,8 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework import generics
 from rest_framework.parsers import JSONParser
 
-from .models import Company, Contact, ContactDocument, Opportunity, Product, Interaction, Task, InteractionDocument, Notification, Meeting
-from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, ContactDocumentSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, InteractionDocumentSerializer, NotificationSerializer, MeetingSerializer
+from .models import Company, Contact, Opportunity, Product, Interaction, Task, Notification, Meeting
+from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, NotificationSerializer, MeetingSerializer
 
 from datetime import timedelta
 import csv
@@ -179,7 +179,7 @@ class CompanyCSVUploadView(APIView):
             return Response({'error': f'Failed to process CSV: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 class ContactViewSet(viewsets.ModelViewSet, ExportMixin):
-    parser_classes = [JSONParser]
+    parser_classes = [MultiPartParser, JSONParser]
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     permission_classes = [IsAuthenticated]
@@ -206,20 +206,34 @@ class ContactViewSet(viewsets.ModelViewSet, ExportMixin):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
-class ContactDocumentViewSet(viewsets.ModelViewSet):
-    parser_classes = [JSONParser]
-    serializer_class = ContactDocumentSerializer
-    permission_classes = [IsAuthenticated]
-    renderer_classes = [JSONRenderer]
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        if 'document' in request.data and request.data['document'] is None:
+            if instance.document:
+                instance.document.delete()
+                instance.document = None
+                instance.save()
+        
+        return Response(serializer.data)
+# class ContactDocumentViewSet(viewsets.ModelViewSet):
+#     parser_classes = [JSONParser]
+#     serializer_class = ContactDocumentSerializer
+#     permission_classes = [IsAuthenticated]
+#     renderer_classes = [JSONRenderer]
 
-    def get_queryset(self):
-        return ContactDocument.objects.filter(
-            contact_id=self.kwargs['contact_pk']
-        )
+#     def get_queryset(self):
+#         return ContactDocument.objects.filter(
+#             contact_id=self.kwargs['contact_pk']
+#         )
 
-    def perform_create(self, serializer):
-        contact = Contact.objects.get(pk=self.kwargs['contact_pk'])
-        serializer.save(contact=contact)
+#     def perform_create(self, serializer):
+#         contact = Contact.objects.get(pk=self.kwargs['contact_pk'])
+#         serializer.save(contact=contact)
 
 class OpportunityViewSet(viewsets.ModelViewSet, ExportMixin):
     parser_classes = [JSONParser]
@@ -229,13 +243,13 @@ class OpportunityViewSet(viewsets.ModelViewSet, ExportMixin):
     renderer_classes = [JSONRenderer]
     export_fields = ['id', 'company_id', 'stage', 'expected_value', 'probability']
      
-class InteractionDocumentViewSet(viewsets.ModelViewSet):
-    parser_classes = [JSONParser]
-    serializer_class = InteractionDocumentSerializer
-    permission_classes = [IsAuthenticated]
-    renderer_classes = [JSONRenderer]
+# class InteractionDocumentViewSet(viewsets.ModelViewSet):
+#     parser_classes = [JSONParser]
+#     serializer_class = InteractionDocumentSerializer
+#     permission_classes = [IsAuthenticated]
+#     renderer_classes = [JSONRenderer]
 
-    # @action(detail=False, methods=['get'], url_path='export')
+     # @action(detail=False, methods=['get'], url_path='export')
     # def export_all(self, request):
     #     queryset = self.get_queryset()
         
@@ -262,14 +276,14 @@ class InteractionDocumentViewSet(viewsets.ModelViewSet):
     #     response['Content-Disposition'] = f'attachment; filename="interaction_{interaction.id}.json"'
     #     return response
     
-    def get_queryset(self):
-        return InteractionDocument.objects.filter(
-            interaction_id=self.kwargs['interaction_pk']
-        )
+    # def get_queryset(self):
+    #     return InteractionDocument.objects.filter(
+    #         interaction_id=self.kwargs['interaction_pk']
+    #     )
 
-    def perform_create(self, serializer):
-        interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
-        serializer.save(interaction=interaction)
+    # def perform_create(self, serializer):
+    #     interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
+    #     serializer.save(interaction=interaction)
 
 
 class ProductViewSet(viewsets.ModelViewSet, ExportMixin):
@@ -281,13 +295,27 @@ class ProductViewSet(viewsets.ModelViewSet, ExportMixin):
     export_fields = ['id', 'company_id', 'category', 'volume_offered', 'currency', 'target_price']
 
 class InteractionViewSet(viewsets.ModelViewSet, ExportMixin):
-    parser_classes = [JSONParser]
+    parser_classes = [MultiPartParser, JSONParser]
     queryset = Interaction.objects.all()
     serializer_class = InteractionSerializer
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
     export_fields = ['id', 'company_id', 'contact_id', 'date', 'type', 'status']
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        if 'document' in request.data and request.data['document'] is None:
+            if instance.document:
+                instance.document.delete()
+                instance.document = None
+                instance.save()
+        
+        return Response(serializer.data)
 
 class TaskViewSet(viewsets.ModelViewSet):
     parser_classes = [JSONParser]
@@ -388,20 +416,20 @@ class TaskViewSet(viewsets.ModelViewSet):
         
         return Response(data)
     
-class InteractionDocumentViewSet(viewsets.ModelViewSet):
-    parser_classes = [JSONParser]
-    serializer_class = InteractionDocumentSerializer
-    permission_classes = [IsAuthenticated]
-    renderer_classes = [JSONRenderer]
+# class InteractionDocumentViewSet(viewsets.ModelViewSet):
+#     parser_classes = [JSONParser]
+#     serializer_class = InteractionDocumentSerializer
+#     permission_classes = [IsAuthenticated]
+#     renderer_classes = [JSONRenderer]
 
-    def get_queryset(self):
-        return InteractionDocument.objects.filter(
-            interaction_id=self.kwargs['interaction_pk']
-        )
+#     def get_queryset(self):
+#         return InteractionDocument.objects.filter(
+#             interaction_id=self.kwargs['interaction_pk']
+#         )
 
-    def perform_create(self, serializer):
-        interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
-        serializer.save(interaction=interaction)
+#     def perform_create(self, serializer):
+#         interaction = Interaction.objects.get(pk=self.kwargs['interaction_pk'])
+#         serializer.save(interaction=interaction)
 
 class MeetingViewSet(viewsets.ModelViewSet, ExportMixin):
     queryset = Meeting.objects.all()

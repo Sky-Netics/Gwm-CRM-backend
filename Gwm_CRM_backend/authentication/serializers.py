@@ -7,6 +7,9 @@ class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     company = serializers.PrimaryKeyRelatedField(read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
+    # meetings = serializers.SerializerMethodField()
+    # tasks = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name', 'company', 'company_name']
@@ -14,6 +17,16 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
+    
+    # def get_meetings(self, obj):
+    #     from gwm_crm.serializers import MeetingSerializer 
+    #     meetings = obj.meetings.all()
+    #     return MeetingSerializer(meetings, many=True, context=self.context).data
+    
+    # def get_tasks(self, obj):
+    #     from gwm_crm.serializers import TaskSerializer 
+    #     tasks = obj.assigned_tasks.all()
+    #     return TaskSerializer(tasks, many=True, context=self.context).data
     
 class RegisterSerializer(serializers.ModelSerializer):
     company_id = serializers.PrimaryKeyRelatedField(
@@ -59,7 +72,9 @@ class AssignCompanySerializer(serializers.Serializer):
 class UserDetailSerializer(serializers.Serializer):
     company_name = serializers.CharField(source='company.name', read_only=True)
     full_name = serializers.SerializerMethodField()
-    
+    # meetings = serializers.SerializerMethodField()
+    # tasks = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ['id', 'email', 'first_name', 'last_name', 'full_name', 
@@ -67,4 +82,15 @@ class UserDetailSerializer(serializers.Serializer):
     
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
+    
+    # def get_meetings(self, obj):
+    #     from gwm_crm.serializers import MeetingSerializer 
+    #     meetings = obj.meetings.all()
+    #     return MeetingSerializer(meetings, many=True, context=self.context).data
+    
+    # def get_tasks(self, obj):
+    #     from gwm_crm.serializers import TaskSerializer 
+    #     tasks = obj.assigned_tasks.all()
+    #     return TaskSerializer(tasks, many=True, context=self.context).data
+    
 

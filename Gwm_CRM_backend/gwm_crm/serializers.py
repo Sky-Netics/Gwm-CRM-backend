@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Company, Contact, Opportunity, Product, Interaction, ContactDocument, Task, Meeting, InteractionDocument, Notification
+from .models import Company, Contact, Opportunity, Product, Interaction, Task, Meeting, Notification
 from authentication.models import User 
 from authentication.serializers import UserSerializer
 
@@ -37,23 +37,21 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'company_id', 'full_name', 'position', 'company_email',
             'personal_email', 'phone_office', 'phone_mobile', 'address',
-            'customer_specific_conditions'
+            'customer_specific_conditions', 'document'
         ]
         extra_kwargs = {
             'document': {'required': False},
         }
 
-class ContactDocumentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ContactDocument
-        fields = ['id', 'file', 'uploaded_at', 'name']
-        read_only_fields = ['uploaded_at', 'name']
+# class ContactDocumentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ContactDocument
+#         fields = ['id', 'file', 'uploaded_at', 'name']
+#         read_only_fields = ['uploaded_at', 'name']
 
 class ContactDetailSerializer(ContactSerializer):
-    documents = ContactDocumentSerializer(many=True, read_only=True)
-    
     class Meta(ContactSerializer.Meta):
-        fields = ContactSerializer.Meta.fields + ['documents']
+        pass 
 
 class OpportunitySerializer(serializers.ModelSerializer):
     company_id = serializers.PrimaryKeyRelatedField(
@@ -107,40 +105,33 @@ class InteractionSerializer(serializers.ModelSerializer):
         model = Interaction
         fields = [
             'id', 'company_id', 'contact_id', 'date', 'type', 'status',
-            'summary', 'assigned_to_id', 'documents'
+            'summary', 'assigned_to_id', 'document'
         ]
         extra_kwargs = {
             'date': {'read_only': True},
+            'document': {'required': False}
             # 'attachments': {'required': False},
         }
 
-class InteractionDocumentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = InteractionDocument
-        fields = ['id', 'file', 'uploaded_at', 'name']
-        read_only_fields = ['uploaded_at', 'name']
+# class InteractionDocumentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = InteractionDocument
+#         fields = ['id', 'file', 'uploaded_at', 'name']
+#         read_only_fields = ['uploaded_at', 'name']
 
 class TaskSerializer(serializers.ModelSerializer):
-    # assigned_to = UserSerializer(read_only=True)
-    assigned_to_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), 
-        source='assigned_to',
-        # write_only=True,
-        required=False
-    )
+    assigned_to = UserSerializer(read_only=True)
+    # assigned_to_id = serializers.PrimaryKeyRelatedField(
+    #     queryset=User.objects.all(), 
+    #     source='assigned_to',
+    #     # write_only=True,
+    #     required=False
+    # )
     created_by = UserSerializer(read_only=True)
 
     class Meta:
         model = Task
-        fields = [
-            'id', 'title', 'description', 'status', 'priority',
-            'due_date', 'created_at', 'updated_at',
-            'assigned_to_id',
-            'created_by',
-            'company',
-            'opportunity',
-            'interaction'
-        ]
+        fields = '__all__'
         read_only_fields = ['created_by']
 
 class MeetingSerializer(serializers.ModelSerializer):
