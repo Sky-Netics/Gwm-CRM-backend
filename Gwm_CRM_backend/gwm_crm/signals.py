@@ -3,6 +3,8 @@ from django.dispatch import receiver
 from django.utils import timezone
 from .models import Task, Meeting
 from .utils import create_notification
+from django.contrib.contenttypes.models import ContentType
+
 
 @receiver(post_save, sender=Task)
 def handle_task_notifications(sender, instance, created, **kwargs):
@@ -19,6 +21,7 @@ def handle_task_notifications(sender, instance, created, **kwargs):
                 title=f"New Task: {instance.title}",
                 message=f"You've been assigned: {instance.title}",
                 notification_type='task_assigned',
+                content_type = ContentType.objects.get_for_model(instance),
                 related_object_id=instance.id
             )
         
@@ -30,6 +33,7 @@ def handle_task_notifications(sender, instance, created, **kwargs):
                 title=f"Task Due Soon: {instance.title}",
                 message=f"Due soon: {instance.title}",
                 notification_type='task_due_soon',
+                content_type = ContentType.objects.get_for_model(instance),
                 related_object_id=instance.id
             )
 
@@ -87,22 +91,25 @@ def handle_meeting_attendees(sender, instance, action, pk_set, **kwargs):
 def _create_meeting_notifications(meeting, user):
     """Shared notification creation logic"""
     try:
+        print("here")
         create_notification(
             user=user,
             title="New Meeting Scheduled",
             message=f"Meeting on {meeting.date.strftime('%b %d, %Y')}",
             notification_type='meeting_scheduled',
+            content_type = ContentType.objects.get_for_model(meeting),
             related_object_id=meeting.id
         )
         
-        if meeting.date <= timezone.now() + timezone.timedelta(hours=24):
-            create_notification(
-                user=user,
-                title="Meeting Reminder",
-                message=f"'{meeting.title}' starts soon",
-                notification_type='meeting_reminder',
-                related_object_id=meeting.id
-            )
+        # if meeting.date <= timezone.now() + timezone.timedelta(hours=24):
+        #     create_notification(
+        #         user=user,
+        #         title="Meeting Reminder",
+        #         message=f"'{meeting.title}' starts soon",
+        #         notification_type='meeting_reminder',
+        #         content_type = "Meeting",
+        #         related_object_id=meeting.id
+        #     )
     except Exception as e:
         import logging
         logging.error(f"Meeting notification error for user {user.id}: {str(e)}")

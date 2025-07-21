@@ -3,6 +3,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.utils import timezone
 from django.http import HttpResponse
+from django.contrib.contenttypes.models import ContentType
 
 from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -451,7 +452,83 @@ class UnreadNotificationsView(generics.ListAPIView):
             user=self.request.user,
             seen=False
         ).order_by('-created_at')
-
+    
+    def list(self, request, *args, **kwargs):
+        # First check for upcoming meetings
+        self.check_upcoming_meetings(request.user)
+        self.check_due_task(request.user)
+        
+        # Then proceed with normal notification listing
+        response = super().list(request, *args, **kwargs)
+        
+        # Mark notifications as received
+        queryset = self.filter_queryset(self.get_queryset())
+        queryset.update(received=True)
+        
+        return response
+        
+    def check_upcoming_meetings(self, user):
+        now = timezone.now()
+        five_hours_later = now + timedelta(hours=5)
+        
+        # Get meetings starting within 5 hours that include this user
+        upcoming_meetings = Meeting.objects.filter(
+            users=user,
+            date__gt=now,
+            date__lte=five_hours_later
+        )
+        print(upcoming_meetings)
+        
+        for meeting in upcoming_meetings:
+            # Check if notification already exists
+            existing_notification = Notification.objects.filter(
+                user=user,
+                content_type=ContentType.objects.get_for_model(meeting),
+                related_object_id = meeting.id,
+                type='meeting_due_soon'
+            ).exists()
+            
+            if not existing_notification:
+                # Create new notification
+                Notification.objects.create(
+                    user=user,
+                    content_type=ContentType.objects.get_for_model(meeting),
+                    type='meeting_due_soon',
+                    title=f"Upcoming Meeting: {meeting.title}",
+                    message=f"Your meeting starts at {meeting.date.strftime('%H:%M')}",
+                    related_object_id=meeting.id
+                )
+    def check_due_task(self, user):
+        now = timezone.now()
+        one_hours_later = now + timedelta(hours=1)
+        
+        # Get meetings starting within 5 hours that include this user
+        due_tasks = Task.objects.filter(
+            assigned_to=user,
+            due_date__gt=now,
+            due_date__lte=one_hours_later,
+            status__in=['open', 'in_progress']  # Only notify for active tasks
+        )
+        print(due_tasks)
+        
+        for task in due_tasks:
+            # Check if notification already exists
+            existing_notification = Notification.objects.filter(
+                user=user,
+                content_type=ContentType.objects.get_for_model(task),
+                related_object_id=task.id,
+                type='task_due_soon'
+            ).exists()
+            
+            if not existing_notification:
+                Notification.objects.create(
+                    user=user,
+                    content_type=ContentType.objects.get_for_model(task),
+                    type='task_due_soon',
+                    title=f"Task Due Soon: {task.title}",
+                    message=f"Your task is due at {task.due_date.strftime('%H:%M')}",
+                    related_object_id=task.id
+                )
     
 class MarkNotificationsReadView(APIView):
     parser_classes = [JSONParser]

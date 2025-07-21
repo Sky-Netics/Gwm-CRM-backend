@@ -4,12 +4,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def create_notification(user, title, message, notification_type, related_object_id=None):
+def create_notification(user, title, message, content_type , notification_type, related_object_id=None):
     try:
         notification = Notification.objects.create(
             user=user,
             title=title[:200], 
             message=message,
+            content_type=content_type,
             type=notification_type,
             related_object_id=related_object_id,
             created_at=timezone.now()

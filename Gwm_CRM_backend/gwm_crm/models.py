@@ -2,6 +2,8 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 import pycountry
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 class Company(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -261,6 +263,7 @@ class Task(models.Model):
     
 class Meeting(models.Model):
     company = models.ForeignKey('Company', on_delete=models.CASCADE, null=True, blank=True, related_name='meetings')
+    title = models.CharField(max_length=150,default='Great Meeting!')
     date = models.DateTimeField(blank=True, null=True)
     report = models.TextField(blank=True)
     users = models.ManyToManyField(
@@ -279,10 +282,14 @@ class Notification(models.Model):
     title = models.CharField(max_length=200)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    received = models.BooleanField(default=False)
     seen = models.BooleanField(default=False)
     type = models.CharField(max_length=50, choices=[
         ('task_due_soon', 'Task Due Soon'),
         ('meeting_due_soon', 'Meeting Due Soon'),
         ('task_assigned', 'Task Assigned')
     ])
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE ,null=True) 
     related_object_id = models.IntegerField(null=True, blank=True) 
+    related_object = GenericForeignKey('content_type', 'related_object_id')

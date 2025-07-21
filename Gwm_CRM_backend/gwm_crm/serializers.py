@@ -169,12 +169,4 @@ class CompanyDetailSerializer(CompanySerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = [
-            'id',
-            'title',
-            'message',
-            'type',
-            'seen',
-            'created_at',
-            'related_object_id',
-        ]
+        fields = '__all__'

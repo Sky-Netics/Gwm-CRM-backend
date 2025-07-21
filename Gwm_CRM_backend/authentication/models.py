@@ -5,6 +5,7 @@ from gwm_crm.models import Company
 
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
+    username = models.CharField(max_length=30, unique=True, blank=True, null=True) 
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     is_staff = models.BooleanField(default=False)
@@ -20,7 +21,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['first_name', 'last_name']
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'username']
     
     objects = UserManager()
     
