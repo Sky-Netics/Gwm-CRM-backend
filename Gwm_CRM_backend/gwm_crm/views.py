@@ -1,9 +1,18 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from django.utils import timezone
-from django.http import HttpResponse
+from django.utils.html import strip_tags
+from django.http import HttpResponse, JsonResponse
 from django.contrib.contenttypes.models import ContentType
+from django.contrib import messages
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.views import View
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -15,13 +24,82 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework import generics
 from rest_framework.parsers import JSONParser
 
-from .models import Company, Contact, Opportunity, Product, Interaction, Task, Notification, Meeting
-from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, NotificationSerializer, MeetingSerializer
+from .models import Company, Contact, Opportunity, Product, Interaction, Task, Notification, Meeting, Campaign
+from .serializers import CompanySerializer, CompanyDetailSerializer, ContactSerializer, OpportunitySerializer, ProductSerializer, InteractionSerializer, TaskSerializer, NotificationSerializer, MeetingSerializer, CampaignSerializer
 
 from datetime import timedelta
 import csv
 import json
 import io
+
+class CampaignViewSet(viewsets.ModelViewSet):
+    queryset = Campaign.objects.all()
+    serializer_class = CampaignSerializer
+    permission_classes = [IsAuthenticated]
+
+@method_decorator(csrf_exempt, name='dispatch')
+class SendCampaignView(View):
+    def post(self, request, campaign_id):
+        try:
+            campaign = get_object_or_404(Campaign, pk=campaign_id)
+            
+            if campaign.is_sent:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'This campaign has already been sent.'
+                }, status=400)
+            
+            company_emails = Contact.objects.filter(
+                company__in=campaign.audience.all()
+            ).values_list('company_email', flat=True).distinct()
+            
+            success_count = 0
+            failed_emails = []
+            
+            for email in company_emails:
+                if not email:
+                    continue
+                    
+                try:
+                    html_content = render_to_string('campaign/email_template.html', {
+                        'content': campaign.email_content,
+                        'subject': campaign.title, 
+                        'company_email': email,
+                    })
+                    text_content = strip_tags(html_content)
+                    
+                    email_msg = EmailMultiAlternatives(
+                        subject=campaign.title,
+                        body=text_content,
+                        from_email='your@email.com',
+                        to=[email],
+                    )
+                    email_msg.attach_alternative(html_content, "text/html")
+                    email_msg.send()
+                    success_count += 1
+                except Exception as e:
+                    failed_emails.append({
+                        'email': email,
+                        'error': str(e)
+                    })
+            
+            if success_count > 0:
+                campaign.is_sent = True
+                campaign.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Emails sent to {success_count} companies',
+                'success_count': success_count,
+                'failed_emails': failed_emails,
+                'campaign_id': campaign.id
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
 
 class ExportMixin:
     export_fields = None  # Override this in each viewset

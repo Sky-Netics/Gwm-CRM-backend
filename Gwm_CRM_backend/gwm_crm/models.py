@@ -293,3 +293,26 @@ class Notification(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE ,null=True) 
     related_object_id = models.IntegerField(null=True, blank=True) 
     related_object = GenericForeignKey('content_type', 'related_object_id')
+
+class Campaign(models.Model):
+    title = models.CharField(max_length=50)
+    track_effectiveness = models.CharField(max_length=10, choices=[('opens', 'Opens'), ('clicks', 'CLicks')])
+    audience = models.ManyToManyField(
+        'Company',
+        related_name='campaign',
+        verbose_name="Attendees"
+    )
+    email_content = models.TextField()
+    is_sent = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+# class EmailTracking(models.Model):
+#     campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='tracking')
+#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+#     opened = models.BooleanField(default=False)
+#     opened_at = models.DateTimeField(null=True, blank=True)
+#     clicked = models.BooleanField(default=False)
+#     clicked_at = models.DateTimeField(null=True, blank=True)
+#     unique_token = models.CharField(max_length=50, unique=True)

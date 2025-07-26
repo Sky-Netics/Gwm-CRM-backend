@@ -180,3 +180,13 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': False,  # Disable session auth if not needed
 }
+
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.sendgrid.net'           # or another SMTP provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'apikey'                 # Literal string 'apikey' for SendGrid
+EMAIL_HOST_PASSWORD = 'your_smtp_token_here'  # Securely load via env variable in production
+DEFAULT_FROM_EMAIL = 'your-email@example.com'

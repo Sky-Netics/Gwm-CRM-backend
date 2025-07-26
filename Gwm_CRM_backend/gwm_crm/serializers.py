@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Company, Contact, Opportunity, Product, Interaction, Task, Meeting, Notification
+from .models import Company, Contact, Opportunity, Product, Interaction, Task, Meeting, Notification, Campaign
 from authentication.models import User 
 from authentication.serializers import UserSerializer
 
@@ -120,14 +120,24 @@ class InteractionSerializer(serializers.ModelSerializer):
 #         read_only_fields = ['uploaded_at', 'name']
 
 class TaskSerializer(serializers.ModelSerializer):
-    assigned_to = UserSerializer(read_only=True)
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        required=False,
+        allow_null=True
+    )
+    # assigned_to = UserSerializer(read_only=True)
     # assigned_to_id = serializers.PrimaryKeyRelatedField(
     #     queryset=User.objects.all(), 
     #     source='assigned_to',
     #     # write_only=True,
     #     required=False
     # )
-    created_by = UserSerializer(read_only=True)
+    # created_by = UserSerializer(read_only=True)
+    created_by = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = Task
@@ -169,4 +179,9 @@ class CompanyDetailSerializer(CompanySerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
+        fields = '__all__'
+
+class CampaignSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Campaign
         fields = '__all__'

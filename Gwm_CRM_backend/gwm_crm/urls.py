@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (CompanyViewSet, ContactViewSet, OpportunityViewSet,
                     ProductViewSet, InteractionViewSet, TaskViewSet,
                     CompanyCSVUploadView, MarkNotificationsReadView, UnreadNotificationsView, AllNotificationsView,
-                    MeetingViewSet, CompanyFileViewSet)
+                    MeetingViewSet, CompanyFileViewSet, CampaignViewSet, SendCampaignView)
 
 router = DefaultRouter()
 router.register(r'companies', CompanyViewSet)
@@ -13,6 +13,7 @@ router.register(r'products', ProductViewSet)
 router.register(r'interactions', InteractionViewSet)
 router.register(r'tasks', TaskViewSet, basename='task')
 router.register(r'meetings', MeetingViewSet, basename='meeting')
+router.register(r'campaign', CampaignViewSet, basename='campaign_detail')
 # router.register(r'interactions/(?P<interaction_pk>\d+)/documents', InteractionDocumentViewSet, basename='interaction-documents')
 # router.register(r'companies-files', CompanyFileViewSet, basename='company-files')
 
@@ -40,4 +41,6 @@ urlpatterns = [
     path('api/companies/upload-csv/', CompanyCSVUploadView.as_view(), name='company-upload-csv'),
     path('notifications/all/', AllNotificationsView.as_view(), name='all-notifications'),    path('api/notifications/unread/', UnreadNotificationsView.as_view(), name='notifications-unread'),
     path('api/notifications/mark-as-seen/', MarkNotificationsReadView.as_view(), name='notifications-mark-seen'),
+    # path('campaign/<int:pk>/', CampaignViewSet.as_view(), name='campaign_detail'),
+    path('campaign/<int:campaign_id>/send/', SendCampaignView.as_view(), name='send_campaign'),
     ]
