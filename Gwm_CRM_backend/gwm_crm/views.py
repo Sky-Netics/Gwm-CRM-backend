@@ -528,7 +528,7 @@ class UnreadNotificationsView(generics.ListAPIView):
     def get_queryset(self):
         return Notification.objects.filter(
             user=self.request.user,
-            seen=False
+            # seen=False
         ).order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
